@@ -22,17 +22,37 @@ ReactiveMethod = {
     var args = _.toArray(arguments);
     var serializedArgs = EJSON.stringify(args);
 
+    cc._reactiveMethodData = cc._reactiveMethodData || {};
+    cc._reactiveMethodStale = cc._reactiveMethodStale || {};
+
     if (cc._reactiveMethodData && cc._reactiveMethodData[serializedArgs]) {
       // We are calling the method again with the same arguments, return the
       // previous result
-      // XXX only store results for one recomputation, not forever!
+      
+      // Mark this result as used
+      delete cc._reactiveMethodStale[serializedArgs];
+
       return cc._reactiveMethodData[serializedArgs];
     }
 
     Meteor.apply(args[0], args[1], function (err, result) {
-      cc._reactiveMethodData = cc._reactiveMethodData || {};
       cc._reactiveMethodData[serializedArgs] = result;
       cc.invalidate();
     });
+
+    if (Tracker.active) {
+      // Copied logic from meteor/meteor/packages/ddp/livedata_connection.js
+      Tracker.onInvalidate(function () {
+        // Make sure this is used
+        cc._reactiveMethodStale[serializedArgs] = true;
+
+        Tracker.afterFlush(function () {
+          if (cc._reactiveMethodStale[serializedArgs]) {
+            delete cc._reactiveMethodData[serializedArgs];
+            delete cc._reactiveMethodStale[serializedArgs];
+          }
+        });
+      });
+    }
   }
 };
