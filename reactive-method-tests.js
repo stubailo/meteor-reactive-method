@@ -1,6 +1,7 @@
 if (Meteor.isServer) {
   Meteor.methods({
     joinStrings: function (a, b) {
+      console.log("joinStrings", a, b);
       return a + ", " + b;
     }
   });
@@ -61,6 +62,31 @@ if (Meteor.isServer) {
     }
   ]);
 
+  testAsyncMulti("does not re-run when invoked with non-constant arguments", [
+    function (test, expect) {
+      var done = expect();
+      var runs = 0;
+      Tracker.autorun(function () {
+        var n1 = Math.floor(Math.random()*100);
+        var n2 = Math.floor(Math.random()*100);
+        var numString = ReactiveMethod.call("joinStrings", n1, n2);
+        runs++;
+      });
+
+      setTimeout(function () {
+        //NOTE: this fails rather spectacularly :)
+        test.equal(runs, 2);
+        done();
+      }, 500);
+
+    }
+  ]);
+
+  /*
+  NOTE: I'm seeing intermittent failures on this! Example:
+  avoid extra reruns
+  - fail — assert_equal - expected 2 - actual 3 - not - asyncBlock 0
+  */
   testAsyncMulti("avoid extra reruns", [
     function (test, expect) {
       var done = expect();
