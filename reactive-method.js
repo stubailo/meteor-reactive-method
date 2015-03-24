@@ -20,18 +20,18 @@ ReactiveMethod = {
     }
 
     var args = _.toArray(arguments);
-    var invocationId = cc._id;
+    var invocationId = EJSON.stringify({
+      ccid: cc._id,
+      methodName: args[0]
+    }, {canonical: true});
 
     cc._reactiveMethodData = cc._reactiveMethodData || {};
     cc._reactiveMethodStale = cc._reactiveMethodStale || {};
 
+    //If we find this invocation has completed and a result
     if (cc._reactiveMethodData && cc._reactiveMethodData[invocationId]) {
-      // We are calling the method again with the same arguments, return the
-      // previous result
-
-      // Mark this result as used
+      //mark as used
       delete cc._reactiveMethodStale[invocationId];
-
       return cc._reactiveMethodData[invocationId];
     }
 

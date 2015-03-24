@@ -3,6 +3,10 @@ if (Meteor.isServer) {
     joinStrings: function (a, b) {
       console.log("joinStrings", a, b);
       return a + ", " + b;
+    },
+    dup: function (x) {
+      console.log("dup", x);
+      return x+x;
     }
   });
 } else {
@@ -74,19 +78,33 @@ if (Meteor.isServer) {
       });
 
       setTimeout(function () {
-        //NOTE: this fails rather spectacularly :)
         test.equal(runs, 2);
         done();
-      }, 500);
+      }, 200);
 
     }
   ]);
 
-  /*
-  NOTE: I'm seeing intermittent failures on this! Example:
-  avoid extra reruns
-  - fail — assert_equal - expected 2 - actual 3 - not - asyncBlock 0
-  */
+  testAsyncMulti("should be able to chain 2 different methods", [
+    function (test, expect) {
+      var done = expect();
+      var runs = 0;
+
+      Tracker.autorun(function () {
+        var result1 = ReactiveMethod.call("joinStrings", "x", "y");
+        if (!result1) return;
+
+        var result2 = ReactiveMethod.call("dup", result1);
+        if (!result2) return;
+
+        test.equal(result2, "x, yx, y");
+        done();
+
+        runs++;
+      });
+    }
+  ]);
+
   testAsyncMulti("avoid extra reruns", [
     function (test, expect) {
       var done = expect();
@@ -108,7 +126,7 @@ if (Meteor.isServer) {
         // setting a strict timeout
         test.equal(reruns, 2);
         done();
-      }, 1000);
+      }, 250);
     }
   ]);
 }
