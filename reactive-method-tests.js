@@ -1,7 +1,12 @@
 if (Meteor.isServer) {
   Meteor.methods({
     joinStrings: function (a, b) {
+      console.log("joinStrings", a, b);
       return a + ", " + b;
+    },
+    dup: function (x) {
+      console.log("dup", x);
+      return x+x;
     }
   });
 } else {
@@ -61,6 +66,45 @@ if (Meteor.isServer) {
     }
   ]);
 
+  testAsyncMulti("does not re-run when invoked with non-constant arguments", [
+    function (test, expect) {
+      var done = expect();
+      var runs = 0;
+      Tracker.autorun(function () {
+        var n1 = Math.floor(Math.random()*100);
+        var n2 = Math.floor(Math.random()*100);
+        var numString = ReactiveMethod.call("joinStrings", n1, n2);
+        runs++;
+      });
+
+      setTimeout(function () {
+        test.equal(runs, 2);
+        done();
+      }, 200);
+
+    }
+  ]);
+
+  testAsyncMulti("should be able to chain 2 different methods", [
+    function (test, expect) {
+      var done = expect();
+      var runs = 0;
+
+      Tracker.autorun(function () {
+        var result1 = ReactiveMethod.call("joinStrings", "x", "y");
+        if (!result1) return;
+
+        var result2 = ReactiveMethod.call("dup", result1);
+        if (!result2) return;
+
+        test.equal(result2, "x, yx, y");
+        done();
+
+        runs++;
+      });
+    }
+  ]);
+
   testAsyncMulti("avoid extra reruns", [
     function (test, expect) {
       var done = expect();
@@ -82,7 +126,7 @@ if (Meteor.isServer) {
         // setting a strict timeout
         test.equal(reruns, 2);
         done();
-      }, 1000);
+      }, 250);
     }
   ]);
 }

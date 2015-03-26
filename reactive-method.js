@@ -20,23 +20,23 @@ ReactiveMethod = {
     }
 
     var args = _.toArray(arguments);
-    var serializedArgs = EJSON.stringify(args);
+    var invocationId = EJSON.stringify({
+      ccid: cc._id,
+      methodName: args[0]
+    }, {canonical: true});
 
     cc._reactiveMethodData = cc._reactiveMethodData || {};
     cc._reactiveMethodStale = cc._reactiveMethodStale || {};
 
-    if (cc._reactiveMethodData && cc._reactiveMethodData[serializedArgs]) {
-      // We are calling the method again with the same arguments, return the
-      // previous result
-      
-      // Mark this result as used
-      delete cc._reactiveMethodStale[serializedArgs];
-
-      return cc._reactiveMethodData[serializedArgs];
+    //If we find this invocation has completed and a result
+    if (cc._reactiveMethodData && cc._reactiveMethodData[invocationId]) {
+      //mark as used
+      delete cc._reactiveMethodStale[invocationId];
+      return cc._reactiveMethodData[invocationId];
     }
 
     Meteor.apply(args[0], args[1], function (err, result) {
-      cc._reactiveMethodData[serializedArgs] = result;
+      cc._reactiveMethodData[invocationId] = result;
       cc.invalidate();
     });
 
@@ -44,12 +44,12 @@ ReactiveMethod = {
       // Copied logic from meteor/meteor/packages/ddp/livedata_connection.js
       Tracker.onInvalidate(function () {
         // Make sure this is used
-        cc._reactiveMethodStale[serializedArgs] = true;
+        cc._reactiveMethodStale[invocationId] = true;
 
         Tracker.afterFlush(function () {
-          if (cc._reactiveMethodStale[serializedArgs]) {
-            delete cc._reactiveMethodData[serializedArgs];
-            delete cc._reactiveMethodStale[serializedArgs];
+          if (cc._reactiveMethodStale[invocationId]) {
+            delete cc._reactiveMethodData[invocationId];
+            delete cc._reactiveMethodStale[invocationId];
           }
         });
       });
