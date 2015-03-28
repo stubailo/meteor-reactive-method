@@ -25,7 +25,7 @@ ReactiveMethod = {
     cc._reactiveMethodData = cc._reactiveMethodData || {};
     cc._reactiveMethodStale = cc._reactiveMethodStale || {};
 
-    if (cc._reactiveMethodData && cc._reactiveMethodData[serializedArgs]) {
+    if (cc._reactiveMethodData && _.has(cc._reactiveMethodData, serializedArgs)) {
       // We are calling the method again with the same arguments, return the
       // previous result
       
