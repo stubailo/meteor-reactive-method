@@ -1,6 +1,7 @@
 // Write your package code here!
 
 ReactiveMethod = {
+  _computations: {},
   call: function (/* arguments */) {
     if (! Tracker.currentComputation) {
       // If not in an autorun, throw error
@@ -22,6 +23,9 @@ ReactiveMethod = {
     var args = _.toArray(arguments);
     var serializedArgs = EJSON.stringify(args);
 
+    ReactiveMethod._computations[serializedArgs] = ReactiveMethod._computations[serializedArgs] || [];
+    ReactiveMethod._computations[serializedArgs].push(cc);
+    ReactiveMethod._computations[serializedArgs] = _.uniq(ReactiveMethod._computations[serializedArgs]);
     cc._reactiveMethodData = cc._reactiveMethodData || {};
     cc._reactiveMethodStale = cc._reactiveMethodStale || {};
 
@@ -54,5 +58,19 @@ ReactiveMethod = {
         });
       });
     }
+  },
+  invalidate: function (/* arguments */){
+    var args = _.toArray(arguments);
+    invalidate(args); //
+    invalidate(_.first(args), _.rest(args));
   }
 };
+
+function invalidate(/* arguments */){
+  var args = _.toArray(arguments);
+  var serializedArgs = EJSON.stringify(args);
+  _.each(ReactiveMethod._computations[serializedArgs], function (cc){
+    delete cc._reactiveMethodData[serializedArgs];
+    cc.invalidate();
+  });
+}
