@@ -53,10 +53,11 @@ ReactiveMethod = {
 
     var serializedArgs = EJSON.stringify([methodName, methodArgs]);
 
-    recordMethodComputation(cc, serializedArgs);
 
     cc._reactiveMethodData = cc._reactiveMethodData || {};
     cc._reactiveMethodStale = cc._reactiveMethodStale || {};
+
+    var methodReturnValue;
 
     if (cc._reactiveMethodData && _.has(cc._reactiveMethodData, serializedArgs)) {
       // We are calling the method again with the same arguments, return the
@@ -64,36 +65,41 @@ ReactiveMethod = {
       
       // Mark this result as used
       delete cc._reactiveMethodStale[serializedArgs];
+      methodReturnValue = cc._reactiveMethodData[serializedArgs];
+    } else {
+      // Only record the method call if it doesn't match the condition above about
+      // being called again with the same arguments
+      recordMethodComputation(cc, serializedArgs);
 
-      return cc._reactiveMethodData[serializedArgs];
-    }
-
-    Meteor.apply(methodName, methodArgs, function (err, result) {
-      cc._reactiveMethodData[serializedArgs] = result;
-      cc.invalidate();
-    });
-
-    if (Tracker.active) {
-      // Copied logic from meteor/meteor/packages/ddp/livedata_connection.js
-      Tracker.onInvalidate(function () {
-        // Make sure this is used
-        cc._reactiveMethodStale[serializedArgs] = true;
-
-        Tracker.afterFlush(function () {
-          if (cc._reactiveMethodStale[serializedArgs]) {
-            delete cc._reactiveMethodData[serializedArgs];
-            delete cc._reactiveMethodStale[serializedArgs];
-            deleteMethodComputation(cc, serializedArgs);
-          }
-        });
-
-        if (cc.stopped) {
-          // Delete this computation from global computation store to avoid
-          // keeping a reference to every computation ever
-          cleanUpComputation(cc);
-        }
+      Meteor.apply(methodName, methodArgs, function (err, result) {
+        cc._reactiveMethodData[serializedArgs] = result;
+        cc.invalidate();
       });
     }
+
+    // Copied logic from meteor/meteor/packages/ddp/livedata_connection.js
+    cc.onInvalidate(function () {
+      // Make sure this is used
+      cc._reactiveMethodStale[serializedArgs] = true;
+
+      Tracker.afterFlush(function () {
+        if (cc._reactiveMethodStale[serializedArgs]) {
+          delete cc._reactiveMethodData[serializedArgs];
+          delete cc._reactiveMethodStale[serializedArgs];
+          deleteMethodComputation(cc, serializedArgs);
+        }
+      });
+    });
+
+    cc.onInvalidate(function () {
+      if (cc.stopped) {
+        // Delete this computation from global computation store to avoid
+        // keeping a reference to every computation ever
+        cleanUpComputation(cc);
+      }
+    });
+
+    return methodReturnValue;
   },
 
   /**

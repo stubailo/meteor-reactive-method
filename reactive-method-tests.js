@@ -69,11 +69,17 @@ if (Meteor.isServer) {
       var runs = 0;
       var argVar = new ReactiveVar(1);
 
-      Tracker.autorun(function () {
+      var computation = Tracker.autorun(function () {
         // just to trigger recomputation
         argVar.get();
         ReactiveMethod.call("joinStrings", "a", "b");
         runs++;
+/*
+        if (runs < 5) {
+          Meteor.defer(function () {
+            argVar.set(runs);
+          })
+        }*/
       });
 
       setTimeout(function () {
@@ -104,7 +110,15 @@ if (Meteor.isServer) {
         // the method call is returning more than once, which means something
         // about result caching broke
         test.equal(runs, 6);
-        done();
+        computation.stop();
+
+        Tracker.flush();
+
+        Meteor.defer(function () {
+          console.log(ReactiveMethod._computations);
+          test.equal(ReactiveMethod._computations, {});
+          done();
+        });
       }, 1000);
     }
   ]);
