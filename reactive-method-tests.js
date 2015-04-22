@@ -67,59 +67,43 @@ if (Meteor.isServer) {
     function (test, expect) {
       var done = expect();
       var runs = 0;
-      var argVar = new ReactiveVar(1);
 
-      var computation = Tracker.autorun(function () {
-        // just to trigger recomputation
-        argVar.get();
-        ReactiveMethod.call("joinStrings", "a", "b");
+      Tracker.autorun(function (computation) {
+        var result = ReactiveMethod.call("joinStrings", "a", "b");
+
+        if (runs === 0) {
+          test.equal(result, undefined);
+        } else if (runs === 1) {
+          test.equal(result, "a, b");
+          computation.invalidate();
+        } else if (runs === 2) {
+          test.equal(result, "a, b");
+          computation.invalidate();
+        } else if (runs === 3) {
+          test.equal(result, "a, b");
+          ReactiveMethod.invalidateCall("joinStrings", "a", "b");
+        } else if (runs === 4) {
+          test.equal(result, undefined);
+        } else if (runs === 5) {
+          test.equal(result, "a, b");
+
+          Meteor.call("joinStrings", "a", "b", function () {
+            computation.stop();
+            
+            Tracker.flush();
+
+            Meteor.defer(function () {
+              console.log(ReactiveMethod._computations);
+              test.equal(ReactiveMethod._computations, {});
+              done();
+            });
+          });
+        } else {
+          test.fail();
+        }
+
         runs++;
-/*
-        if (runs < 5) {
-          Meteor.defer(function () {
-            argVar.set(runs);
-          })
-        }*/
       });
-
-      setTimeout(function () {
-        argVar.set(2);
-      }, 200);
-
-      setTimeout(function () {
-        argVar.set(3);
-      }, 400);
-
-      setTimeout(function () {
-        ReactiveMethod.invalidateCall("joinStrings", "a", "b");
-      }, 600);
-
-      setTimeout(function () {
-        // I can't think any way to check how many reruns happen without
-        // setting a strict timeout
-        
-        // Here is why there are 6 runs:
-        // 1. The initial run
-        // 2. The method result comes back
-        // 3. argVar is set to 2
-        // 4. argVar is set to 3
-        // 5. Method result is reset by invalidateCall
-        // 6. New method result comes back
-        
-        // There should not be more than 4 runs; if there are then it means
-        // the method call is returning more than once, which means something
-        // about result caching broke
-        test.equal(runs, 6);
-        computation.stop();
-
-        Tracker.flush();
-
-        Meteor.defer(function () {
-          console.log(ReactiveMethod._computations);
-          test.equal(ReactiveMethod._computations, {});
-          done();
-        });
-      }, 1000);
     }
   ]);
 }
