@@ -1,6 +1,6 @@
 Package.describe({
   name: 'simple:reactive-method',
-  version: '1.0.1',
+  version: '1.0.2',
   // Brief, one-line summary of the package.
   summary: 'Call methods synchronously inside Tracker.autorun',
   // URL to the Git repository containing the source code for this package.
