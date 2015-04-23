@@ -25,6 +25,18 @@ Template.foo.helpers({
     methodResult: function () {
         // Super fun!
         return ReactiveMethod.call("myMethod", "a", "b");
+        
+        // Can also use 'apply' style
+        // return ReactiveMethod.apply("myMethod", ["a", "b"]);
     }
 });
+```
+
+### Invalidating method calls
+
+Sometimes, you want to force a reactive method to get a new value from the server, even though the arguments are the same. In that case, use `ReactiveMethod.invalidateCall` or `ReactiveMethod.invalidateApply`, like so:
+
+```js
+// Will cause the helper above to rerun
+ReactiveMethod.invalidateCall("myMethod", "a", "b");
 ```
