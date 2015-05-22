@@ -32,6 +32,10 @@ Template.foo.helpers({
 });
 ```
 
+### Method results are updated every time their arguments change
+
+Be careful! If you pass something like `Random.id()` or `new Date()` as one of the arguments, you will cause an infinite loop where the method is called infinitely over and over. If you don't want your method call to re-run on every argument change, try this other package: https://atmospherejs.com/mnmtanish/call
+
 ### Invalidating method calls
 
 Sometimes, you want to force a reactive method to get a new value from the server, even though the arguments are the same. In that case, use `ReactiveMethod.invalidateCall` or `ReactiveMethod.invalidateApply`, like so:
