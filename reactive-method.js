@@ -120,7 +120,7 @@ ReactiveMethod = {
 
     _.each(ReactiveMethod._computations[serializedArgs], function (cc) {
       delete cc._reactiveMethodData[serializedArgs];
-      cc.invalidate();
+      cc._compute();
     });
   }
 };
