@@ -1,8 +1,8 @@
 Package.describe({
   name: 'deanius:reactive-method',
-  version: '1.1.1',
-  summary: 'For all practical purposes, make `Meteor.call` sync inside `Tracker.autorun`',
-  git: 'https://github.com/chicagogrooves/meteor-reactive-method',
+  version: '1.1.2',
+  summary: 'Deprecated. See deanius:promise instead',
+  git: 'https://github.com/deanius/meteor-reactive-method',
   documentation: 'README.md'
 });
 
