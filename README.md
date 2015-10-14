@@ -1,2 +1,2 @@
 
-Deprecated. See [`okgrow:promise`](https://atmospherejs.com/okgrow/promise) instead.
+Deprecated. See [`deanius:promise`](https://atmospherejs.com/deanius/promise) instead.
