@@ -79,8 +79,12 @@ ReactiveMethod = {
 
     // Copied logic from meteor/meteor/packages/ddp/livedata_connection.js
     cc.onInvalidate(function () {
-      // Make sure this is used
-      cc._reactiveMethodStale[serializedArgs] = true;
+      if (cc._isReactiveInvalidate){
+        delete cc._isReactiveInvalidate
+      } else {
+        // Make sure this is used
+        cc._reactiveMethodStale[serializedArgs] = true;
+      }
 
       Tracker.afterFlush(function () {
         if (cc._reactiveMethodStale[serializedArgs]) {
@@ -120,6 +124,7 @@ ReactiveMethod = {
 
     _.each(ReactiveMethod._computations[serializedArgs], function (cc) {
       delete cc._reactiveMethodData[serializedArgs];
+      cc._isReactiveInvalidate = true;
       cc.invalidate();
     });
   }
