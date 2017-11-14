@@ -2,6 +2,12 @@
 
 > Call methods synchronously inside Tracker.autorun.
 
+---------------
+
+**Deprecated: Please fork this package if you would like to continue to work on it, and I'd happily link to it!**
+
+---------------
+
 Install with `meteor add simple:reactive-method`
 
 Sometimes, you want to call a [Meteor method](http://docs.meteor.com/#/full/meteor_call) inside of a template helper or Tracker.autorun computation, and get a return value. Now you can!
